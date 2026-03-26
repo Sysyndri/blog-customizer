@@ -2,7 +2,7 @@ import { ArrowButton } from 'src/ui/arrow-button';
 import { Button } from 'src/ui/button';
 
 import styles from './ArticleParamsForm.module.scss';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { Text } from 'src/ui/text';
 import { Select } from 'src/ui/select';
@@ -19,22 +19,71 @@ import {
 
 import { RadioGroup } from 'src/ui/radio-group';
 import { Separator } from 'src/ui/separator';
+import useOnClickOutside from 'src/hooks/useOnClickOutside';
 
-export const ArticleParamsForm = () => {
-	const [formState, setFormState] =
-		useState<ArticleStateType>(defaultArticleState);
+interface ArticleParamsFormProps {
+	formState: {
+		fontFamilyOption: OptionType;
+		fontColor: OptionType;
+		backgroundColor: OptionType;
+		contentWidth: OptionType;
+		fontSizeOption: OptionType;
+	};
+	setFormState: (newState: ArticleStateType) => void;
+	onApply: () => void;
+	onReset: () => void;
+}
+
+export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
+	const formState = props.formState;
+	const setFormState = props.setFormState;
+	const onApply = props.onApply;
+	const onReset = props.onReset;
+
 	const [isFormOpen, setFormOpen] = useState(false);
+
+	const formRef = useRef(null);
 
 	const formToogle = () => {
 		setFormOpen(!isFormOpen);
 	};
 
-	const selectValue = (key: keyof ArticleStateType, value: OptionType) => {
-		setFormState((items) => ({
-			...items,
+	const selectValue = <K extends keyof ArticleStateType>(
+		key: K,
+		value: ArticleStateType[K]
+	) => {
+		setFormState({
+			...formState,
 			[key]: value,
-		}));
+		});
 	};
+
+	const formSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		onApply();
+		setFormOpen(false);
+	};
+
+	const formReset = () => {
+		setFormState(defaultArticleState);
+		onReset();
+	};
+
+	useOnClickOutside(formRef, () => setFormOpen(false));
+
+	useEffect(() => {
+		const handleEscKey = (event: KeyboardEvent) => {
+			if (isFormOpen && event.key === 'Escape') {
+				setFormOpen(false);
+			}
+		};
+
+		document.addEventListener('keydown', handleEscKey);
+
+		return () => {
+			document.removeEventListener('keydown', handleEscKey);
+		};
+	}, [isFormOpen]);
 
 	return (
 		<>
@@ -43,7 +92,7 @@ export const ArticleParamsForm = () => {
 				className={clsx(styles.container, {
 					[styles.container_open]: isFormOpen,
 				})}>
-				<form className={styles.form}>
+				<form className={styles.form} onSubmit={formSubmit} ref={formRef}>
 					<Text size={31} weight={800} uppercase={true}>
 						Задайте параметры
 					</Text>
@@ -52,7 +101,9 @@ export const ArticleParamsForm = () => {
 						title='шрифт'
 						selected={formState.fontFamilyOption}
 						options={fontFamilyOptions}
-						onChange={(value) => selectValue('fontSizeOption', value)}></Select>
+						onChange={(value) =>
+							selectValue('fontFamilyOption', value)
+						}></Select>
 
 					<RadioGroup
 						title='размер шрифта'
@@ -86,7 +137,12 @@ export const ArticleParamsForm = () => {
 						onChange={(value) => selectValue('contentWidth', value)}></Select>
 
 					<div className={styles.bottomContainer}>
-						<Button title='Сбросить' htmlType='reset' type='clear' />
+						<Button
+							title='Сбросить'
+							htmlType='reset'
+							type='clear'
+							onClick={formReset}
+						/>
 						<Button title='Применить' htmlType='submit' type='apply' />
 					</div>
 				</form>
