@@ -4,9 +4,14 @@ type Handler = (event: MouseEvent | TouchEvent) => void;
 
 export default function useOnClickOutside<T extends HTMLElement = HTMLElement>(
 	ref: RefObject<T>,
-	handler: Handler
+	handler: Handler,
+	isOpen: boolean
 ): void {
 	useEffect(() => {
+		if (!isOpen) {
+			return;
+		}
+
 		const listener = (event: MouseEvent | TouchEvent) => {
 			if (!ref.current || ref.current.contains(event.target as Node)) {
 				return;

@@ -14,7 +14,6 @@ import {
 	fontColors,
 	fontFamilyOptions,
 	fontSizeOptions,
-	OptionType,
 } from 'src/constants/articleProps';
 
 import { RadioGroup } from 'src/ui/radio-group';
@@ -22,23 +21,16 @@ import { Separator } from 'src/ui/separator';
 import useOnClickOutside from 'src/hooks/useOnClickOutside';
 
 interface ArticleParamsFormProps {
-	formState: {
-		fontFamilyOption: OptionType;
-		fontColor: OptionType;
-		backgroundColor: OptionType;
-		contentWidth: OptionType;
-		fontSizeOption: OptionType;
-	};
-	setFormState: (newState: ArticleStateType) => void;
-	onApply: () => void;
+	onApply: (formState: ArticleStateType) => void;
 	onReset: () => void;
 }
 
-export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
-	const formState = props.formState;
-	const setFormState = props.setFormState;
-	const onApply = props.onApply;
-	const onReset = props.onReset;
+export const ArticleParamsForm = ({
+	onApply,
+	onReset,
+}: ArticleParamsFormProps) => {
+	const [formState, setFormState] =
+		useState<ArticleStateType>(defaultArticleState);
 
 	const [isFormOpen, setFormOpen] = useState(false);
 
@@ -60,7 +52,7 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 
 	const formSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		onApply();
+		onApply(formState);
 		setFormOpen(false);
 	};
 
@@ -69,9 +61,13 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 		onReset();
 	};
 
-	useOnClickOutside(formRef, () => setFormOpen(false));
+	useOnClickOutside(formRef, () => setFormOpen(false), isFormOpen);
 
 	useEffect(() => {
+		if (!isFormOpen) {
+			return;
+		}
+
 		const handleEscKey = (event: KeyboardEvent) => {
 			if (isFormOpen && event.key === 'Escape') {
 				setFormOpen(false);
@@ -92,7 +88,11 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 				className={clsx(styles.container, {
 					[styles.container_open]: isFormOpen,
 				})}>
-				<form className={styles.form} onSubmit={formSubmit} ref={formRef}>
+				<form
+					className={styles.form}
+					onSubmit={formSubmit}
+					onReset={formReset}
+					ref={formRef}>
 					<Text size={31} weight={800} uppercase={true}>
 						Задайте параметры
 					</Text>
@@ -137,12 +137,7 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 						onChange={(value) => selectValue('contentWidth', value)}></Select>
 
 					<div className={styles.bottomContainer}>
-						<Button
-							title='Сбросить'
-							htmlType='reset'
-							type='clear'
-							onClick={formReset}
-						/>
+						<Button title='Сбросить' htmlType='reset' type='clear' />
 						<Button title='Применить' htmlType='submit' type='apply' />
 					</div>
 				</form>
